@@ -1,18 +1,40 @@
-# 指定 YOLO 配置缓存目录，避免全局污染
-$env:YOLO_CONFIG_DIR = "E:\YOLO\yolo_new\ultralytics_config"
+[CmdletBinding()]
+param(
+    [string]$WorkspaceRoot,
+    [string]$YoloExe = 'E:\Anaconda_envs\envs\yolo\Scripts\yolo.exe',
+    [string]$Weights,
+    [string]$DataYaml,
+    [int]$ImageSize = 640,
+    [ValidateSet('train', 'val', 'test')]
+    [string]$Split = 'test',
+    [int]$Device = 0
+)
 
-# 激活 yolo 虚拟环境
-conda activate yolo
-# 切换工作目录到项目根目录
-Set-Location "E:\YOLO"
+$ErrorActionPreference = 'Stop'
+$repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+. (Join-Path $repoRoot 'scripts\project_paths.ps1')
+$workspace = Resolve-YoloWorkspaceRoot -WorkspaceRoot $WorkspaceRoot
 
-# 将此路径修改为你最新一次训练所得的 best.pt 权重文件路径
-$Weights = "E:\YOLO\runs\detect\train\weights\best.pt"
+if (-not $Weights) {
+    $Weights = Join-Path $workspace 'Training_runs\bottle\yolov8n_640\weights\best.pt'
+}
+if (-not $DataYaml) {
+    $DataYaml = Join-Path $workspace 'Datasets\bottle\bottle_plastic.yaml'
+}
+foreach ($requiredFile in @($YoloExe, $Weights, $DataYaml)) {
+    if (-not (Test-Path -LiteralPath $requiredFile -PathType Leaf)) {
+        throw "Required file not found: $requiredFile"
+    }
+}
 
-# 在测试集进行验证，评估模型的各项指标
-yolo detect val `
-  model="$Weights" `
-  data="E:\YOLO\yolo_new\data.yaml" `
-  imgsz=320 `
-  split=test `
-  device=0
+$env:YOLO_CONFIG_DIR = Join-Path $workspace 'Config\ultralytics'
+Set-Location -LiteralPath $repoRoot
+
+& $YoloExe detect val `
+    "model=$Weights" `
+    "data=$DataYaml" `
+    "imgsz=$ImageSize" `
+    "split=$Split" `
+    "device=$Device"
+
+exit $LASTEXITCODE

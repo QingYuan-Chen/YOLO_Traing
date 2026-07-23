@@ -1,123 +1,123 @@
-# YOLOv8 / YOLO11 / YOLO12 新结构训练脚本
+# Ultralytics 新版 YOLO 训练示例
 
-这个目录用于训练 Ultralytics 新版 YOLO 模型，例如 YOLOv8、YOLO11、YOLO12 等。
+本目录演示 YOLOv8、YOLO11、YOLO12、YOLO26 等新版 Ultralytics 模型的训练、验证、预测、断点续训和导出。
 
-## 1. 环境安装
-
-```powershell
-E:\YOLO\yolo_new\setup_yolo_new_env.ps1
-```
-
-或者手动执行：
-
-```powershell
-conda create -n yolo python=3.10 -y
-conda activate yolo
-pip install ultralytics
-```
-
-## 2. 训练
-
-```powershell
-E:\YOLO\yolo_new\train_yolo_new.ps1
-```
-
-默认训练脚本使用本地权重：
-
-```powershell
-$Model = "E:\YOLO\yolo_new\weights\yolo11n.pt"
-```
-
-如果想让 Ultralytics 自动下载官方预训练权重，可以把脚本中 `$Model` 改成：
-
-```powershell
-$Model = "yolo11n.pt"
-```
-
-或者：
-
-```powershell
-$Model = "yolov8n.pt"
-```
-
-规则很简单：
+## 目录
 
 ```text
-写模型名称：本地没有时通常会自动联网下载
-写本地路径：本地必须真的存在这个 .pt 文件
+yolo_new/
+├─ Powershell/        # 命令行封装
+├─ Python/            # Python API 示例
+└─ data.yaml          # 塑料瓶示例数据集配置
 ```
 
-训练结果默认保存到：
+## 工作目录
+
+脚本默认使用：
 
 ```text
-E:\YOLO\runs\detect\train
+%USERPROFILE%\Desktop\YOLOTraining
 ```
 
-如果目录已存在，Ultralytics 可能会自动生成：
-
-```text
-E:\YOLO\runs\detect\train2
-E:\YOLO\runs\detect\train3
-```
-
-## 3. 验证
-
-先把 `val_yolo_new.ps1` 中的 `$Weights` 改成实际训练结果路径，例如：
+可以在当前 PowerShell 会话覆盖：
 
 ```powershell
-$Weights = "E:\YOLO\runs\detect\train2\weights\best.pt"
+$env:YOLO_WORKSPACE_ROOT = 'D:\YOLOTraining'
 ```
 
-然后执行：
+## 两类训练入口
+
+创建或补齐已锁定版本的示例环境：
 
 ```powershell
-E:\YOLO\yolo_new\val_yolo_new.ps1
+powershell -ExecutionPolicy Bypass -File .\yolo_new\Powershell\setup_yolo_new_env.ps1
 ```
 
-## 4. 预测
+该脚本默认使用 Python 3.12、CUDA 12.8 PyTorch、Ultralytics 8.4.60，并在结束时执行导入检查。
 
-先把 `predict_yolo_new.ps1` 中的 `$Weights` 改成实际训练结果路径，然后执行：
+### 已验证入口
+
+仓库根目录的 `start_yolov8n_640.ps1` 保存已完成塑料瓶 YOLOv8n 640 训练所使用的参数：
 
 ```powershell
-E:\YOLO\yolo_new\predict_yolo_new.ps1
+powershell -ExecutionPolicy Bypass -File .\start_yolov8n_640.ps1
 ```
 
-预测输入目录默认是：
+默认输出名为 `yolov8n_640`。脚本发现同名输出目录时会停止，避免混入或覆盖已有训练证据。
 
-```text
-E:\YOLO\merged\test\images
-```
-
-## 5. 继续训练
-
-如果训练中断，先把 `resume_yolo_new.ps1` 中的 `$LastWeights` 改成中断训练生成的 `last.pt`：
+### 教学实验入口
 
 ```powershell
-$LastWeights = "E:\YOLO\runs\detect\train2\weights\last.pt"
+powershell -ExecutionPolicy Bypass -File .\yolo_new\Powershell\train_yolo_new.ps1
 ```
 
-然后执行：
+默认使用单独的 `yolov8n_640_manual` run name，便于修改 batch、epochs、模型或数据集而不污染已验证结果。
+
+Python API 示例：
 
 ```powershell
-E:\YOLO\yolo_new\resume_yolo_new.ps1
+& 'E:\Anaconda_envs\envs\yolo\python.exe' .\yolo_new\Python\train.py
 ```
 
-## 6. 导出 ONNX
+Python 示例通过 `Python/project_paths.py` 解析仓库路径和外部工作目录。
 
-先把 `export_yolo_new_onnx.ps1` 中的 `$Weights` 改成实际训练结果路径，然后执行：
+## 验证
 
 ```powershell
-E:\YOLO\yolo_new\export_yolo_new_onnx.ps1
+powershell -ExecutionPolicy Bypass -File .\yolo_new\Powershell\val_yolo_new.ps1
 ```
 
-默认导出参数：
+覆盖默认权重或数据集：
 
-```text
-format=onnx
-imgsz=320
-opset=12
-simplify=True
-device=cpu
+```powershell
+.\yolo_new\Powershell\val_yolo_new.ps1 `
+  -Weights 'D:\runs\weights\best.pt' `
+  -DataYaml 'D:\datasets\data.yaml' `
+  -ImageSize 640 `
+  -Split test
 ```
 
-注意：YOLOv8、YOLO11、YOLO12 等新结构模型的 ONNX 输出格式可能和经典 YOLOv5 不同。部署到 K230 时，需要使用匹配的新结构后处理代码，不能直接套用传统 YOLOv5 的后处理。
+## 预测
+
+```powershell
+.\yolo_new\Powershell\predict_yolo_new.ps1 `
+  -Weights 'D:\runs\weights\best.pt' `
+  -Source 'D:\images'
+```
+
+## 断点续训
+
+```powershell
+.\yolo_new\Powershell\resume_yolo_new.ps1 `
+  -LastWeights 'D:\runs\weights\last.pt'
+```
+
+只对同一次实验的 `last.pt` 使用断点续训。
+
+## 导出 ONNX
+
+推荐使用统一转换入口：
+
+```powershell
+.\Model_Conversion\export_pt_to_onnx.ps1 `
+  -ModelPath 'D:\runs\weights\best.pt' `
+  -OutputPath 'D:\models\model.onnx' `
+  -ImageSize 640 `
+  -Opset 17 `
+  -Simplify
+```
+
+兼容入口：
+
+```powershell
+.\yolo_new\Powershell\export_yolo_new_onnx.ps1
+```
+
+转换脚本会在临时目录导出，并使用 ONNX checker 和 ONNX Runtime 验证后再复制到目标位置。
+
+## 注意
+
+- 新版 Ultralytics 模型不能直接套用经典 YOLOv5 的板端后处理。
+- 文件名不能证明模型代际，应检查模型结构和输入输出。
+- 正式实验应显式记录模型、数据集、`imgsz`、batch、epochs 和 run name。
+- 不要同时启动两个任务争抢同一张 GPU。

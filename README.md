@@ -1,392 +1,257 @@
-# YOLO 模型训练、转换与部署说明
+# YOLO 学习、训练与模型转换
 
-这个仓库用于整理乒乓球 `ball` 目标检测模型的训练和部署流程，包含两条路线：
+这个仓库面向希望系统学习 YOLO 的开发者，重点回答四类问题：
 
-- `yolov5_train/`：官方 Ultralytics YOLOv5 仓库方式，训练的是经典 YOLOv5 架构。
-- `yolo_new/`：使用 `ultralytics` Python 包训练 YOLOv8、YOLO11、YOLO12 等新结构模型。
+1. YOLO 是什么，不同代际的模型有什么区别。
+2. 如何准备数据集并完成训练、验证、预测和断点续训。
+3. Windows、CUDA、路径、输出目录和模型身份方面有哪些常见坑。
+4. 如何把训练得到的 PyTorch 权重转换成 ONNX、K230 KModel 或 Hailo HEF。
 
-当前数据集配置为单类别检测：
+仓库中的塑料瓶检测任务是一个经过实际训练和转换验证的示例，不是本仓库唯一支持的数据集。代码和文档可以替换成自己的模型、数据集和输出目录。
+
+## 推荐阅读顺序
+
+1. [YOLO 基础](docs/YOLO基础.md)
+2. [训练指南](docs/训练指南.md)
+3. [常见问题与排查](docs/常见问题.md)
+4. [已验证示例](docs/已验证示例.md)
+5. [模型转换总览](Model_Conversion/README.md)
+6. [K230 转换](Model_Conversion/K230/README.md)
+7. [K230 板端运行](K230_Run/README.md)
+8. [Hailo-8L 转换](Model_Conversion/Hailo/README.md)
+
+历史实验笔记保存在 `docs/archive/`。历史笔记中的路径、模型和结论不应直接当作当前操作步骤。
+
+## 仓库结构
+
+```text
+E:\YOLO
+├─ docs/                       # 原理、训练方法、常见坑和历史笔记
+├─ yolo_new/                   # Ultralytics 新版 YOLO 训练示例
+│  ├─ Powershell/              # PowerShell 入口
+│  └─ Python/                  # Python API 入口
+├─ yolov5_train/               # 经典 YOLOv5 训练和导出入口
+├─ Model_Conversion/           # PT、ONNX、KModel、HEF 转换方法
+├─ K230_Run/                   # K230 板端推理示例与适配边界
+├─ Model_Traning/              # 预训练权重和离线资源管理
+└─ start_yolov8n_640.ps1       # 已验证的 YOLOv8n 640 训练入口
+```
+
+`Model_Traning` 是仓库已有目录名，拼写暂时保留以避免破坏现有脚本路径。
+
+数据集、训练结果、离线依赖和转换产物默认放在仓库外：
+
+```text
+%USERPROFILE%\Desktop\YOLOTraining
+├─ Datasets/
+├─ Training_runs/
+├─ Module_conversion/
+├─ Dependencies/
+└─ Config/
+```
+
+可以通过环境变量更换这个目录：
+
+```powershell
+$env:YOLO_WORKSPACE_ROOT = 'D:\YOLOTraining'
+```
+
+## 两条训练路线
+
+| 路线 | 入口 | 适合场景 | 关键区别 |
+|---|---|---|---|
+| 经典 YOLOv5 | `yolov5_train/` | 学习传统 YOLOv5、兼容已有部署链 | 使用独立的 `train.py`、`val.py`、`export.py` |
+| Ultralytics 新版 YOLO | `yolo_new/` | YOLOv8、YOLO11、YOLO12、YOLO26 等 | 使用统一的 `yolo` CLI 或 `YOLO` Python API |
+
+模型文件名不能可靠证明模型结构。部署前应结合模型元数据、网络结构、输入输出张量和文件哈希确认模型身份。
+
+## 快速开始
+
+### 1. 准备数据集 YAML
+
+以单类别塑料瓶数据集为例：
+
+模板文件：[configs/bottle.example.yaml](configs/bottle.example.yaml)
 
 ```yaml
-path: E:/YOLO/merged
+path: C:/Users/your-name/Desktop/YOLOTraining/Datasets/bottle/dataset
 train: train/images
 val: valid/images
 test: test/images
 
 nc: 1
-names: ['ball']
+names: ['plastic-bottle']
 ```
 
-## 目录说明
+检查事项：
+
+- `train`、`val`、`test` 对应目录真实存在。
+- 每张图片应有同名的 YOLO 标签文件。
+- 标签格式为 `class x_center y_center width height`，坐标归一化到 `0~1`。
+- `nc` 必须和 `names` 的类别数量一致。
+
+### 2. 训练 Ultralytics YOLOv8n
+
+当前已验证入口：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start_yolov8n_640.ps1
+```
+
+默认示例参数：
 
 ```text
-E:\YOLO
-├─ yolo_new/                 # YOLOv8/YOLO11/YOLO12 等新结构训练脚本
-├─ yolov5_train/             # 经典 YOLOv5 训练配置和辅助脚本
-├─ K230_Run/                 # K230 板端运行示例脚本
-├─ PingPong/                 # 本地模型文件存放目录，默认不推送大模型
-├─ merged/                   # 数据集目录，默认不推送
-└─ Model_Traning/            # 原始训练资料/权重/离线包，默认不推送
+model   = yolov8n.pt
+imgsz   = 640
+batch   = 16
+epochs  = 200
+device  = 0
+workers = 0
+name    = yolov8n_640
 ```
 
-`.gitignore` 已经忽略数据集、虚拟环境、训练输出和大模型文件，避免把 `.pt`、`.onnx`、`.kmodel`、数据集图片等直接推到 GitHub。大模型建议使用 GitHub Releases 或网盘保存。
+更通用的 PowerShell 和 Python 示例位于：
 
-## 模型结构区别
+```text
+yolo_new/Powershell/
+yolo_new/Python/
+```
+
+### 3. 训练经典 YOLOv5
+
+先准备官方 YOLOv5 源码和环境，再执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\yolov5_train\train_yolov5.ps1
+```
+
+仓库不会跟踪完整的 `ultralytics/yolov5` 上游源码。初始化方法和锁定版本说明见 [经典 YOLOv5 说明](yolov5_train/README.md)。
+
+### 4. 验证、预测和导出
+
+Ultralytics 新版 YOLO：
+
+```text
+yolo_new/Powershell/val_yolo_new.ps1
+yolo_new/Powershell/predict_yolo_new.ps1
+yolo_new/Powershell/resume_yolo_new.ps1
+Model_Conversion/export_pt_to_onnx.ps1
+```
 
 经典 YOLOv5：
 
-- 使用官方 `ultralytics/yolov5` 仓库的 `train.py`、`export.py`。
-- 权重内部类型为 `models.yolo.DetectionModel`。
-- 结构中包含 `anchors`、`C3`、`SPPF`、`Detect`。
-- 属于 anchor-based 检测模型。
-
-YOLOv8/YOLO11/YOLO12 等新结构：
-
-- 使用 `from ultralytics import YOLO` 的统一接口。
-- 训练命令由 `model.train(...)` 发起。
-- 新版模型通常为 anchor-free 或新版检测头结构。
-- 不能简单把 YOLOv5 的后处理、部署代码直接套到 YOLOv8/11/12 上。
-
-## 一、经典 YOLOv5 训练
-
-### 1. 创建环境
-
-推荐使用已经验证过的 GPU 环境：
-
-```powershell
-conda create -n yolov5gpu128 python=3.10 -y
-conda activate yolov5gpu128
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128 --no-cache-dir
+```text
+yolov5_train/export_yolov5_onnx.ps1
+Model_Conversion/export_yolov5_pt_to_onnx.ps1
 ```
 
-RTX 5060 Laptop GPU 需要支持 `sm_120` 的新版 PyTorch。之前的 `torch 2.5.1+cu121` 能识别 CUDA，但实际计算会报：
+## 模型转换
+
+转换链路不能只看文件扩展名：
 
 ```text
-CUDA error: no kernel image is available for execution on the device
+训练权重 .pt
+    └─ 导出并验证 ONNX
+         ├─ PC / ONNX Runtime
+         ├─ K230 / nncase → .kmodel
+         └─ Hailo Dataflow Compiler → .hef
 ```
 
-当前已验证可用环境：
+转换时必须确认：
 
-```text
-Python 3.10.20
-torch 2.11.0+cu128
-GPU: NVIDIA GeForce RTX 5060 Laptop GPU
-CUDA 计算: ok
-```
+- 模型代际和检测头类型。
+- 输入尺寸、batch、动态或静态输入。
+- ONNX opset、IR version 和算子兼容性。
+- 量化数据的预处理方式和代表性。
+- 板端后处理与模型输出格式一致。
 
-### 2. 克隆 YOLOv5 官方仓库
+详细命令和安全封装脚本见 [Model_Conversion/README.md](Model_Conversion/README.md)。经典 YOLOv5n 320 KModel 的摄像头推理方法见 [K230 板端运行说明](K230_Run/README.md)。
 
-不要把官方 YOLOv5 仓库本体提交到当前仓库，按需重新克隆即可：
+### YOLOv8n 转 Hailo-8L
+
+当前已验证方法使用静态 640 ONNX、opset 17、1024 张校准图片和 `hailo8l` 架构：
 
 ```powershell
-cd E:\YOLO\yolov5_train
-git clone https://github.com/ultralytics/yolov5.git
-cd yolov5
-pip install -r requirements.txt
+# 1. best.pt → 静态 ONNX
+.\Model_Conversion\export_pt_to_onnx.ps1 `
+  -ModelPath '<训练结果>\weights\best.pt' `
+  -OutputPath '<转换目录>\yolov8n.onnx' `
+  -ImageSize 640 `
+  -Opset 17 `
+  -Simplify
+
+# 2. 准备容器工作区和校准集
+.\Model_Conversion\Hailo\prepare_hailo_workspace.ps1 `
+  -OnnxPath '<转换目录>\yolov8n.onnx' `
+  -CalibrationImages '<数据集>\valid\images' `
+  -WorkName 'yolov8n-bottle-640' `
+  -CalibrationCount 1024
+
+# 3. 先预检
+.\Model_Conversion\Hailo\compile_yolov8n_hailo8l.ps1 `
+  -WorkName 'yolov8n-bottle-640' `
+  -OnnxFileName 'yolov8n.onnx' `
+  -OutputPath '<转换目录>\yolov8n_bottle_640_hailo8l.hef' `
+  -Classes 1 `
+  -PreflightOnly
+
+# 4. 去掉 -PreflightOnly 后正式编译
+.\Model_Conversion\Hailo\compile_yolov8n_hailo8l.ps1 `
+  -WorkName 'yolov8n-bottle-640' `
+  -OnnxFileName 'yolov8n.onnx' `
+  -OutputPath '<转换目录>\yolov8n_bottle_640_hailo8l.hef' `
+  -Classes 1
 ```
 
-### 3. 开始训练
+完整的 Docker、端节点、校准集、哈希验证和故障排查方法见 [YOLOv8n 转 Hailo-8L HEF](Model_Conversion/Hailo/README.md)。
 
-```powershell
-conda activate yolov5gpu128
-cd E:\YOLO\yolov5_train\yolov5
+## 已验证示例
 
-python -W ignore train.py --img 320 --batch-size 16 --epochs 200 --data "E:\YOLO\yolov5_train\data.yaml" --weights "E:\YOLO\Model_Traning\weights\yolov5\yolov5n.pt" --workers 0 --device 0
-```
+当前仓库外保存有以下塑料瓶示例结果：
 
-注意：
+| 项目 | 位置或标识 |
+|---|---|
+| 经典 YOLOv5n 320 | `Training_runs/bottle/yolov5n_classic_320` |
+| YOLOv8n 640 | `Training_runs/bottle/yolov8n_640` |
+| K230 KModel | `yolov5n_bottle_320_k230.kmodel` |
+| Hailo-8L HEF | `yolov8n_bottle_640_hailo8l.hef` |
 
-- 参数前面是两个横杠，例如 `--img`，不是 `---img`。
-- Windows 路径里如果有空格，必须用双引号包起来。
-- `--device 0` 表示使用第 1 张 GPU。
-- 训练时看 `GPU_mem`，如果不是 `0G`，说明正在使用 GPU。
+转换文档中记录的 KModel 和 HEF SHA-256 已与本地参考产物核对。训练结果和转换产物不直接提交到普通 Git 历史。
 
-训练完成后权重一般保存在：
+训练指标、参数来源和比较边界见 [已验证示例](docs/已验证示例.md)。
 
-```text
-E:\YOLO\yolov5_train\yolov5\runs\train\exp*\weights\best.pt
-E:\YOLO\yolov5_train\yolov5\runs\train\exp*\weights\last.pt
-```
+## 最容易踩的坑
 
-当前已完成训练的模型位于：
+- 把 YOLOv8 类模型误当成经典 YOLOv5。
+- 数据集 YAML 路径、类别数或目录名不一致。
+- Windows 路径包含空格却没有正确引用。
+- 在另一个盘符启动 YOLOv5，触发跨盘符相对路径错误。
+- CUDA 可见，但 PyTorch 构建不支持显卡计算能力。
+- 同时运行两个训练任务争抢同一张 GPU。
+- 训练、验证和导出使用了不同的 `imgsz` 或不同权重。
+- 复用已有输出目录，导致自动编号、混入旧结果或覆盖证据。
+- 只修改 ONNX `ir_version`，却没有解决 opset 或算子不兼容。
+- K230/Hailo 板端后处理与模型输出张量不匹配。
 
-```text
-E:\YOLO\yolov5_train\yolov5\runs\train\exp2\weights\best.pt
-```
+完整排查方法见 [常见问题与排查](docs/常见问题.md)。
 
-本次训练最终指标：
+## 大文件策略
 
-```text
-precision:      0.94299
-recall:         0.90271
-mAP@0.5:        0.94597
-mAP@0.5:0.95:   0.70185
-```
+以下内容不应直接进入普通 Git 历史：
 
-## 二、经典 YOLOv5 验证和预测
+- 数据集图片和标签副本。
+- `best.pt`、`last.pt` 和预训练权重。
+- ONNX、KModel、HEF、TensorRT Engine。
+- 训练日志、预测图片和缓存。
+- 离线 wheel 和转换工具链工作目录。
 
-验证测试集：
+`.gitignore` 负责阻止常见产物误提交。需要共享的大文件应使用 GitHub Release 或其他外部存储，并记录文件大小和 SHA-256。
 
-```powershell
-conda activate yolov5gpu128
-cd E:\YOLO\yolov5_train\yolov5
+当前 GitHub 仓库尚未发布正式 Release。在 Release 资产上传完成前，`Model_Traning/download_assets.ps1` 中的下载流程只能作为发布方案，不能视为已可用的下载服务。
 
-python val.py --weights "runs\train\exp2\weights\best.pt" --data "E:\YOLO\yolov5_train\data.yaml" --img 320 --task test --device 0
-```
+## 验证边界
 
-预测图片：
-
-```powershell
-python detect.py --weights "runs\train\exp2\weights\best.pt" --source "E:\YOLO\merged\test\images" --img 320 --conf-thres 0.25 --device 0
-```
-
-预测结果会保存到：
-
-```text
-E:\YOLO\yolov5_train\yolov5\runs\detect\exp*
-```
-
-## 三、经典 YOLOv5 转 ONNX
-
-普通 ONNX 导出：
-
-```powershell
-conda activate yolov5gpu128
-cd E:\YOLO\yolov5_train\yolov5
-
-python export.py --weights "E:\YOLO\yolov5_train\yolov5\runs\train\exp2\weights\best.pt" --include onnx --img 320 --opset 11 --simplify --device cpu
-```
-
-导出文件：
-
-```text
-E:\YOLO\yolov5_train\yolov5\runs\train\exp2\weights\best.onnx
-```
-
-已验证的 ONNX 信息应类似：
-
-```text
-ir_version: 6
-opset: 11
-input:  images [1, 3, 320, 320]
-output: output0 [1, 6300, 6]
-```
-
-其中 `output0 [1, 6300, 6]` 是 YOLOv5 单类别检测输出。`6` 通常对应框坐标、置信度和类别信息。
-
-## 四、K230 转换流程
-
-将 ONNX 复制到 K230 转换工作目录：
-
-```powershell
-Copy-Item "E:\YOLO\yolov5_train\yolov5\runs\train\exp2\weights\best.onnx" "C:\Users\MECHREU\k230-work\yolov5-320.onnx" -Force
-```
-
-进入 WSL / Docker：
-
-```bash
-chmod -R a+rwX ~/k230-work
-docker start -ai k230-converter
-cd /workspace
-touch test_write && rm test_write
-```
-
-转换为 K230 可用模型：
-
-```bash
-python /home/user/model_converter/convert_model.py \
-  --model /workspace/yolov5-320.onnx \
-  --dataset_path /workspace/images \
-  --input_width 320 \
-  --input_height 320 \
-  --target k230 \
-  --ptq_option 0
-```
-
-如果出现：
-
-```text
-ValidationError: Your model ir_version is higher than the checker's.
-```
-
-说明 ONNX 版本对转换容器来说太新，不是数据集或权限问题。解决方式是重新用 `--opset 11 --device cpu` 导出，并确认 `ir_version` 是较低版本，例如 `6`。
-
-## 五、K230 板端部署
-
-`K230_Run/` 中有板端 Python 示例：
-
-```text
-K230_Run/yolov8.py
-K230_Run/yolov12.py
-```
-
-板端脚本中需要重点修改：
-
-```python
-kmodel_path = "/sdcard/best.kmodel"
-self.class_id = ['ball']
-model_input_size=[320, 320]
-confidence_threshold = 0.6
-nms_threshold = 0.2
-```
-
-部署步骤：
-
-1. 将转换得到的 `.kmodel` 放到开发板 SD 卡，例如 `/sdcard/best.kmodel`。
-2. 将对应的运行脚本放到开发板。
-3. 确认脚本中的 `kmodel_path`、类别名、输入尺寸和阈值与模型一致。
-4. 在开发板运行脚本。
-
-注意：YOLOv5 和 YOLOv8/11/12 的输出格式和后处理方式可能不同。板端脚本必须和模型输出结构匹配。
-
-## 六、YOLOv8/YOLO11/YOLO12 新结构训练
-
-新结构模型放在 `yolo_new/`，通过 `ultralytics` 包运行。
-
-安装环境：
-
-```powershell
-conda create -n yolo python=3.10 -y
-conda activate yolo
-pip install ultralytics
-```
-
-训练示例：
-
-```powershell
-conda activate yolo
-cd E:\YOLO
-python yolo_new\train.py
-```
-
-也可以直接使用 `yolo_new` 中整理好的 PowerShell 脚本：
-
-```powershell
-E:\YOLO\yolo_new\train_yolo_new.ps1
-E:\YOLO\yolo_new\val_yolo_new.ps1
-E:\YOLO\yolo_new\predict_yolo_new.ps1
-E:\YOLO\yolo_new\resume_yolo_new.ps1
-E:\YOLO\yolo_new\export_yolo_new_onnx.ps1
-```
-
-核心代码形式：
-
-```python
-from ultralytics import YOLO
-
-model = YOLO(r"E:\YOLO\yolo_new\weights\yolo11n.pt")
-model.train(
-    data=r"E:\YOLO\yolo_new\data.yaml",
-    epochs=200,
-    batch=16,
-    imgsz=320,
-    workers=0,
-)
-```
-
-训练结果通常保存到：
-
-```text
-E:\YOLO\runs\detect\train*
-```
-
-验证：
-
-```powershell
-python yolo_new\test.py
-```
-
-预测：
-
-```powershell
-python yolo_new\predict.py
-```
-
-继续训练：
-
-```powershell
-python yolo_new\continue.py
-```
-
-导出 ONNX：
-
-```powershell
-python yolo_new\export.py
-```
-
-新结构模型导出后的 ONNX 输出格式可能与 YOLOv5 不同，部署到 K230 时需要使用匹配的后处理脚本。
-
-## 七、常见问题
-
-### 1. `unrecognized arguments: ---img`
-
-参数写错了。应该是两个横杠：
-
-```powershell
---img 320
-```
-
-不是：
-
-```powershell
----img 320
-```
-
-### 2. 权重路径带空格导致报错
-
-错误示例：
-
-```text
-train.py: error: unrecognized arguments: Traning\weights\...
-```
-
-原因是路径里有空格但没有加双引号。正确写法：
-
-```powershell
---weights "E:\YOLO\Model Traning\weights\yolov5\yolov5n.pt"
-```
-
-当前仓库建议统一使用无空格路径：
-
-```text
-E:\YOLO\Model_Traning
-```
-
-### 3. `torch.cuda.is_available()` 是 True 但训练失败
-
-如果显卡是 RTX 5060 Laptop GPU，旧版 PyTorch CUDA 可能不支持 `sm_120`。需要使用支持 CUDA 12.8 的新版 PyTorch，例如当前验证过的：
-
-```text
-torch 2.11.0+cu128
-```
-
-### 4. 训练很慢
-
-先看训练日志中的 `GPU_mem`：
-
-- `GPU_mem` 为 `0G`：大概率在用 CPU。
-- `GPU_mem` 有数值：正在用 GPU。
-
-如果仍然慢，可以降低：
-
-```text
---img 320
---batch-size 8
---workers 0
-```
-
-### 5. ONNX 转 K230 报 IR 版本太高
-
-重新导出：
-
-```powershell
-python export.py --weights "runs\train\exp2\weights\best.pt" --include onnx --img 320 --opset 11 --simplify --device cpu
-```
-
-然后检查：
-
-```powershell
-python -c "import onnx; m=onnx.load(r'runs\train\exp2\weights\best.onnx'); print(m.ir_version); print([(o.domain, o.version) for o in m.opset_import])"
-```
-
-
+- 文档中的“已验证”只指明确记录了命令、环境、输出或哈希的流程。
+- 脚本通过语法检查不等于训练或板端部署已经成功。
+- 软件训练成功不等于 ONNX、KModel、HEF 或板端运动链路成功。
+- 整理仓库时不得把历史输出目录当成可随意删除的缓存。

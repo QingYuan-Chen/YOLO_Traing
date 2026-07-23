@@ -1,4 +1,6 @@
 .vscode/
+.codex/
+Ultralytics/
 
 # Local datasets and historical working folders
 merged/
@@ -21,8 +23,12 @@ runs/
 *.pth
 *.onnx
 *.kmodel
+*.hef
+*.har
 *.engine
 *.tflite
+*.npy
+*.npz
 
 # Cloned upstream repository. Re-clone it with the command in README.md.
 yolov5_train/yolov5/

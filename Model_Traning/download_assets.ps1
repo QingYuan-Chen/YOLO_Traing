@@ -4,12 +4,17 @@ param(
     [string]$Target,
 
     [string]$Repo = "QingYuan-Chen/Yolo_Traing",
-    [string]$ReleaseTag
+    [string]$ReleaseTag,
+    [string]$WorkspaceRoot
 )
 
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = (Resolve-Path -LiteralPath (Join-Path $ScriptDir '..')).Path
+. (Join-Path $RepoRoot 'scripts\project_paths.ps1')
+$Workspace = Resolve-YoloWorkspaceRoot -WorkspaceRoot $WorkspaceRoot
+$ExternalAssetRoot = Join-Path $Workspace "Dependencies"
 $TempDir = Join-Path $env:TEMP "yolo-asset-download"
 
 New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
@@ -34,7 +39,7 @@ if ($Target -eq "wheels") {
     }
 
     $BaseUrl = "https://github.com/$Repo/releases/download/$ReleaseTag"
-    $WheelDir = Join-Path $ScriptDir "wheels"
+    $WheelDir = Join-Path $ExternalAssetRoot "wheels"
     $TorchName = "torch-2.8.0+cu128-cp312-cp312-win_amd64.whl"
     $TorchPath = Join-Path $WheelDir $TorchName
 

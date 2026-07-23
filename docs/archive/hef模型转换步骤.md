@@ -1,4 +1,8 @@
-# HEF 模型转换步骤
+# HEF 模型转换步骤（历史记录）
+
+> 本文保留早期 PingPong、旧模型路径和转换排查记录。当前转换流程请使用
+> [`Model_Conversion/README.md`](../../Model_Conversion/README.md) 和
+> [`Model_Conversion/Hailo/README.md`](../../Model_Conversion/Hailo/README.md)。
 
 本文档记录当前 Windows + WSL2 Ubuntu-22.04 + Docker + Hailo AI Software Suite 的 YOLO `.pt` 转 `.hef` 流程。
 

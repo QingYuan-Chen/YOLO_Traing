@@ -1,15 +1,26 @@
-# 指定 YOLO 配置缓存目录，避免全局污染
-$env:YOLO_CONFIG_DIR = "E:\YOLO\yolo_new\ultralytics_config"
+[CmdletBinding()]
+param(
+    [string]$WorkspaceRoot,
+    [string]$YoloExe = 'E:\Anaconda_envs\envs\yolo\Scripts\yolo.exe',
+    [string]$LastWeights
+)
 
-# 激活 yolo 虚拟环境
-conda activate yolo
-# 切换工作目录到项目根目录
-Set-Location "E:\YOLO"
+$ErrorActionPreference = 'Stop'
+$repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+. (Join-Path $repoRoot 'scripts\project_paths.ps1')
+$workspace = Resolve-YoloWorkspaceRoot -WorkspaceRoot $WorkspaceRoot
 
-# 将此路径修改为中断训练时保存的最新一次的 last.pt 权重文件路径
-$LastWeights = "E:\YOLO\runs\detect\train\weights\last.pt"
+if (-not $LastWeights) {
+    $LastWeights = Join-Path $workspace 'Training_runs\bottle\yolov8n_640\weights\last.pt'
+}
+foreach ($requiredFile in @($YoloExe, $LastWeights)) {
+    if (-not (Test-Path -LiteralPath $requiredFile -PathType Leaf)) {
+        throw "Required file not found: $requiredFile"
+    }
+}
 
-# 恢复并继续被中断的模型训练
-yolo detect train `
-  model="$LastWeights" `
-  resume=True
+$env:YOLO_CONFIG_DIR = Join-Path $workspace 'Config\ultralytics'
+Set-Location -LiteralPath $repoRoot
+
+& $YoloExe detect train "model=$LastWeights" 'resume=True'
+exit $LASTEXITCODE

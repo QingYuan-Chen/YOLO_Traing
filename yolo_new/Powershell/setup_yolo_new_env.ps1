@@ -1,15 +1,54 @@
-$env:CONDA_NO_PLUGINS = "true"
-$env:CONDA_NUMBER_CHANNEL_NOTICES = "0"
+[CmdletBinding()]
+param(
+    [string]$EnvironmentName = 'yolo',
+    [string]$PythonVersion = '3.12',
+    [string]$TorchVersion = '2.8.0',
+    [string]$TorchVisionVersion = '0.23.0',
+    [string]$UltralyticsVersion = '8.4.60',
+    [string]$OnnxVersion = '1.17.0',
+    [string]$OnnxRuntimeVersion = '1.26.0'
+)
 
-# 为 YOLOv8, YOLO11, YOLO12 等创建一个新的 Ultralytics YOLO 环境。
-# 如果环境已经存在，此脚本只会激活它并更新 ultralytics 库。
-conda create -n yolo python=3.10 -y
-conda activate yolo
+$ErrorActionPreference = 'Stop'
+$env:CONDA_NO_PLUGINS = 'true'
+$env:CONDA_NUMBER_CHANNEL_NOTICES = '0'
 
-# 升级 pip 到最新版本
-python -m pip install --upgrade pip
-# 安装官方 ultralytics 包
-pip install ultralytics
+$environmentList = conda env list --json | ConvertFrom-Json
+$environmentExists = $environmentList.envs | Where-Object {
+    (Split-Path -Leaf $_) -eq $EnvironmentName
+}
 
-# 打印并检查已安装的 ultralytics 版本
-python -c "import ultralytics; print('ultralytics', ultralytics.__version__)"
+if (-not $environmentExists) {
+    conda create -n $EnvironmentName "python=$PythonVersion" -y
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to create Conda environment: $EnvironmentName"
+    }
+}
+
+conda run -n $EnvironmentName python -m pip install --upgrade pip
+conda run -n $EnvironmentName python -m pip install `
+    "torch==$TorchVersion" `
+    "torchvision==$TorchVisionVersion" `
+    --index-url https://download.pytorch.org/whl/cu128
+conda run -n $EnvironmentName python -m pip install `
+    "ultralytics==$UltralyticsVersion" `
+    "onnx==$OnnxVersion" `
+    "onnxruntime==$OnnxRuntimeVersion"
+
+conda run -n $EnvironmentName python -c @'
+import onnx
+import onnxruntime
+import torch
+import ultralytics
+
+print("torch", torch.__version__)
+print("cuda", torch.version.cuda)
+print("cuda_available", torch.cuda.is_available())
+print("ultralytics", ultralytics.__version__)
+print("onnx", onnx.__version__)
+print("onnxruntime", onnxruntime.__version__)
+'@
+
+if ($LASTEXITCODE -ne 0) {
+    throw 'Environment import check failed.'
+}

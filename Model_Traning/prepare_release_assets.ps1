@@ -4,12 +4,17 @@ param(
     [string]$Target,
 
     [string]$OutputDir,
-    [int64]$PartSizeBytes = 1900MB
+    [int64]$PartSizeBytes = 1900MB,
+    [string]$WorkspaceRoot
 )
 
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$RepoRoot = (Resolve-Path -LiteralPath (Join-Path $ScriptDir '..')).Path
+. (Join-Path $RepoRoot 'scripts\project_paths.ps1')
+$Workspace = Resolve-YoloWorkspaceRoot -WorkspaceRoot $WorkspaceRoot
+$ExternalAssetRoot = Join-Path $Workspace "Dependencies"
 
 function Write-AssetTable {
     param([string]$Path)
@@ -63,7 +68,7 @@ if ($Target -eq "wheels") {
         $OutputDir = "$env:USERPROFILE\Desktop\yolo-wheel-release-assets"
     }
 
-    $WheelDir = Join-Path $ScriptDir "wheels"
+    $WheelDir = Join-Path $ExternalAssetRoot "wheels"
     $TorchName = "torch-2.8.0+cu128-cp312-cp312-win_amd64.whl"
     $TorchWheel = Join-Path $WheelDir $TorchName
     $NonTorchZip = Join-Path $OutputDir "wheels-non-torch.zip"

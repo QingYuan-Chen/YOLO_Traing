@@ -1,19 +1,36 @@
-# 指定 YOLO 配置缓存目录，避免全局污染
-$env:YOLO_CONFIG_DIR = "E:\YOLO\yolo_new\ultralytics_config"
+[CmdletBinding()]
+param(
+    [string]$WorkspaceRoot,
+    [string]$Weights,
+    [string]$OutputPath,
+    [int]$ImageSize = 640,
+    [int]$Opset = 17,
+    [switch]$Simplify
+)
 
-# 激活 yolo 虚拟环境
-conda activate yolo
-# 切换工作目录到项目根目录
-Set-Location "E:\YOLO"
+$ErrorActionPreference = 'Stop'
+$repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+. (Join-Path $repoRoot 'scripts\project_paths.ps1')
+$workspace = Resolve-YoloWorkspaceRoot -WorkspaceRoot $WorkspaceRoot
 
-# 将此路径修改为你最新一次训练所得的 best.pt 权重文件路径
-$Weights = "E:\YOLO\runs\detect\train\weights\best.pt"
+if (-not $Weights) {
+    $Weights = Join-Path $workspace 'Training_runs\bottle\yolov8n_640\weights\best.pt'
+}
+if (-not $OutputPath) {
+    $OutputPath = Join-Path $workspace 'Module_conversion\bottle\yolov8n.onnx'
+}
 
-# 执行模型导出，将 PyTorch 模型 (.pt) 导出为 ONNX 格式
-yolo export `
-  model="$Weights" `
-  format=onnx `
-  imgsz=320 ` # 推理时计划使用的输入图像尺寸，建议为 32 的整数倍。
-  opset=12 ` # ONNX 算子集(opset)版本。12 对各类推理框架兼容性较好。
-  simplify=True `
-  device=cpu
+$exportScript = Join-Path $repoRoot 'Model_Conversion\export_pt_to_onnx.ps1'
+$arguments = @{
+    ModelPath = $Weights
+    OutputPath = $OutputPath
+    ImageSize = $ImageSize
+    Opset = $Opset
+    WorkspaceRoot = $workspace
+}
+if ($Simplify) {
+    $arguments.Simplify = $true
+}
+
+& $exportScript @arguments
+exit $LASTEXITCODE

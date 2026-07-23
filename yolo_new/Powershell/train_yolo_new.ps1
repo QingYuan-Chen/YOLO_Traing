@@ -1,26 +1,35 @@
-# 指定 YOLO 配置缓存目录，避免全局污染
-$env:YOLO_CONFIG_DIR = "E:\YOLO\yolo_new\ultralytics_config"
+[CmdletBinding()]
+param(
+    [string]$WorkspaceRoot,
+    [string]$YoloExe = 'E:\Anaconda_envs\envs\yolo\Scripts\yolo.exe',
+    [string]$ModelPath,
+    [string]$DataYaml,
+    [string]$ProjectDir,
+    [string]$RunName = 'yolov8n_640_manual',
+    [int]$Epochs = 300,
+    [int]$ImageSize = 640,
+    [int]$BatchSize = 32,
+    [int]$Device = 0,
+    [int]$Workers = 0
+)
 
-# 激活 yolo 虚拟环境
-conda activate yolo
-# 切换工作目录到项目根目录
-Set-Location "E:\YOLO"
+$ErrorActionPreference = 'Stop'
+$repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+$launcher = Join-Path $repoRoot 'start_yolov8n_640.ps1'
 
-# 使用本地的预训练模型文件:
-$Model = "E:\YOLO\yolo_new\weights\yolo11n.pt"
+$arguments = @{
+    WorkspaceRoot = $WorkspaceRoot
+    YoloExe = $YoloExe
+    RunName = $RunName
+    Epochs = $Epochs
+    ImageSize = $ImageSize
+    BatchSize = $BatchSize
+    Device = $Device
+    Workers = $Workers
+}
+if ($ModelPath) { $arguments.ModelPath = $ModelPath }
+if ($DataYaml) { $arguments.DataYaml = $DataYaml }
+if ($ProjectDir) { $arguments.ProjectDir = $ProjectDir }
 
-# 或者使用官方模型名称(如果没找到将自动下载):
-# $Model = "yolo11n.pt"
-# $Model = "yolov8n.pt"
-
-# 执行目标检测模型训练
-yolo detect train `
-  model="$Model" `
-  data="E:\YOLO\yolo_new\data.yaml" `
-  epochs=200 `
-  imgsz=320 `
-  batch=16 `
-  workers=0 `
-  device=0 `
-  project="E:\YOLO\runs\detect" `
-  name="train"
+& $launcher @arguments
+exit $LASTEXITCODE

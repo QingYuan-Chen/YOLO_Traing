@@ -1,19 +1,47 @@
-# 指定 YOLO 配置缓存目录，避免全局污染
-$env:YOLO_CONFIG_DIR = "E:\YOLO\yolo_new\ultralytics_config"
+[CmdletBinding()]
+param(
+    [string]$WorkspaceRoot,
+    [string]$YoloExe = 'E:\Anaconda_envs\envs\yolo\Scripts\yolo.exe',
+    [string]$Weights,
+    [string]$Source,
+    [string]$ProjectDir,
+    [string]$RunName = 'yolov8n_640',
+    [int]$ImageSize = 640,
+    [double]$Confidence = 0.25,
+    [int]$Device = 0
+)
 
-# 激活 yolo 虚拟环境
-conda activate yolo
-# 切换工作目录到项目根目录
-Set-Location "E:\YOLO"
+$ErrorActionPreference = 'Stop'
+$repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+. (Join-Path $repoRoot 'scripts\project_paths.ps1')
+$workspace = Resolve-YoloWorkspaceRoot -WorkspaceRoot $WorkspaceRoot
 
-# 将此路径修改为你最新一次训练所得的 best.pt 权重文件路径
-$Weights = "E:\YOLO\runs\detect\train\weights\best.pt"
+if (-not $Weights) {
+    $Weights = Join-Path $workspace 'Training_runs\bottle\yolov8n_640\weights\best.pt'
+}
+if (-not $Source) {
+    $Source = Join-Path $workspace 'Datasets\bottle\Plastic Bottle 2.0.v39i.yolov8\test\images'
+}
+if (-not $ProjectDir) {
+    $ProjectDir = Join-Path $workspace 'Training_runs\bottle\predictions'
+}
+foreach ($requiredPath in @($YoloExe, $Weights, $Source)) {
+    if (-not (Test-Path -LiteralPath $requiredPath)) {
+        throw "Required path not found: $requiredPath"
+    }
+}
 
-# 运行模型预测并保存检测结果图片
-yolo detect predict `
-  model="$Weights" `
-  source="E:\YOLO\merged\test\images" `
-  imgsz=320 `
-  conf=0.25 `
-  device=0 `
-  save=True
+$env:YOLO_CONFIG_DIR = Join-Path $workspace 'Config\ultralytics'
+Set-Location -LiteralPath $repoRoot
+
+& $YoloExe detect predict `
+    "model=$Weights" `
+    "source=$Source" `
+    "imgsz=$ImageSize" `
+    "conf=$Confidence" `
+    "device=$Device" `
+    "project=$ProjectDir" `
+    "name=$RunName" `
+    'save=True'
+
+exit $LASTEXITCODE
