@@ -6,4 +6,3 @@ opencv-python==4.12.0.88
 tensorrt==10.13.3.9.post1
 torch==2.8.0+cu128
 ultralytics==8.4.60
-
