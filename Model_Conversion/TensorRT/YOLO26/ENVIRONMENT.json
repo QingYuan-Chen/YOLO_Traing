@@ -1,0 +1,18 @@
+{
+  "tested_at": "2026-08-22",
+  "os": "Windows",
+  "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "gpu_memory_mib": 8151,
+  "python": "3.12.13",
+  "torch": "2.8.0+cu128",
+  "torch_cuda": "12.8",
+  "tensorrt": "10.13.3.9.post1",
+  "ultralytics": "8.4.60",
+  "opencv": "4.12.0",
+  "numpy": "2.2.6",
+  "model_input": [1, 3, 640, 640],
+  "batch": 1,
+  "engine_internal_precision": "FP16",
+  "engine_io_precision": "FP32"
+}
+

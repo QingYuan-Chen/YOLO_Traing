@@ -34,6 +34,7 @@
 | 导出 ONNX | 新版 YOLO 和经典 YOLOv5 的独立导出脚本 | [模型转换总览](Model_Conversion/README.md) |
 | 部署到 K230 | opset 12 ONNX、nncase 2.9 编译、板端推理脚本 | [K230 转换](Model_Conversion/K230/README.md) |
 | 部署到 Hailo-8L | YOLOv8n 解析、校准、量化和 HEF 编译 | [Hailo-8L 转换](Model_Conversion/Hailo/README.md) |
+| 部署到 NVIDIA TensorRT | YOLO26 实例分割 engine、原生异步推理、CUDA Graph 与 mask 后处理 | [YOLO26 TensorRT](Model_Conversion/TensorRT/YOLO26/README.md) |
 | 排查失败 | CUDA、Windows 路径、数据集、输出目录和后处理问题 | [常见问题](docs/常见问题.md) |
 | 对照实际结果 | 已验证训练指标、转换产物及 SHA-256 | [已验证示例](docs/已验证示例.md) |
 
