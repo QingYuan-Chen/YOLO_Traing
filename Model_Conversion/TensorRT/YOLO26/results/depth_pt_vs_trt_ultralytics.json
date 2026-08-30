@@ -1,0 +1,61 @@
+{
+  "test_contract": {
+    "image": "E:\\YOLO\\.conda_pkgs\\benchmark\\bus.jpg",
+    "imgsz": 768,
+    "batch": 1,
+    "rect": false,
+    "warmup": 20,
+    "iterations": 100,
+    "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU"
+  },
+  "pytorch": {
+    "model": "E:\\YOLO\\Model_Traning\\weights\\yolo26\\depth\\yolo26s-depth.pt",
+    "latency_ms": {
+      "median": 13.55030000104307,
+      "p95": 17.094900000302005,
+      "mean": 13.82240200002343,
+      "fps_from_median": 73.79910407319561
+    },
+    "ultralytics_last_result_speed_ms": {
+      "preprocess": 2.4176000006264076,
+      "inference": 10.601599999063183,
+      "postprocess": 0.6255999996938044
+    },
+    "depth_m": {
+      "min": 1.0549412965774536,
+      "max": 13.27023983001709,
+      "mean": 4.504980564117432,
+      "median": 3.6186084747314453,
+      "finite_fraction": 1.0
+    }
+  },
+  "tensorrt": {
+    "model": "E:\\YOLO\\Model_Traning\\weights\\yolo26\\depth\\engine\\fp16\\yolo26s-depth-fp16-b1-768.engine",
+    "latency_ms": {
+      "median": 6.341950000205543,
+      "p95": 7.604600001286599,
+      "mean": 6.357123000034335,
+      "fps_from_median": 157.68020876348598
+    },
+    "ultralytics_last_result_speed_ms": {
+      "preprocess": 2.141799999662908,
+      "inference": 2.7413999996497296,
+      "postprocess": 0.14180000107444357
+    },
+    "depth_m": {
+      "min": 1.0544172525405884,
+      "max": 13.28152847290039,
+      "mean": 4.506470203399658,
+      "median": 3.619997501373291,
+      "finite_fraction": 1.0
+    }
+  },
+  "tensorrt_versus_pytorch": {
+    "mae_m": 0.0031606700467256632,
+    "rmse_m": 0.0048173049343739355,
+    "mean_abs_relative": 0.0006706506614642022,
+    "delta1_agreement": 1.0,
+    "max_abs_m": 0.03779792785644531
+  },
+  "median_end_to_end_speedup": 2.1366141329723356
+}
