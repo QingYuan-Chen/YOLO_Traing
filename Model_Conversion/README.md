@@ -33,10 +33,15 @@ Model_Conversion/
 ├─ K230/
 │  ├─ README.md
 │  └─ compile_onnx_to_kmodel.ps1
-└─ Hailo/
-   ├─ README.md
-   ├─ prepare_hailo_workspace.ps1
-   └─ compile_yolov8n_hailo8l.ps1
+├─ Hailo/
+│  ├─ README.md
+│  ├─ prepare_hailo_workspace.ps1
+│  └─ compile_yolov8n_hailo8l.ps1
+└─ TensorRT/
+   └─ YOLO26/
+      ├─ README.md
+      ├─ BENCHMARK_RESULTS.md
+      └─ scripts/
 ```
 
 ## 一、PT 转 ONNX
@@ -144,6 +149,7 @@ K230 使用的经典 YOLOv5 ONNX 建议运行封装脚本，它会强制传统�
 | 目标 | 推荐 ONNX | 量化数据 | 最终格式 |
 |---|---|---|---|
 | PC / ONNX Runtime | 静态输入，常用 opset 12 或 17 | 不需要 | `.onnx` |
+| NVIDIA GPU / TensorRT | 与目标 GPU、TensorRT 版本匹配的静态或动态输入 | FP16 不需要；INT8 需要 | `.engine` |
 | K230 / nncase 2.9 | 静态 NCHW、batch 1、opset 12；经典 YOLOv5 不简化 | 10 张以上代表性图片 | `.kmodel` |
 | Hailo-8L | 静态输入；当前 YOLOv8n 640 使用 opset 17 | 当前成功流程使用 1024 张图片 | `.hef` |
 
@@ -153,6 +159,7 @@ K230 使用的经典 YOLOv5 ONNX 建议运行封装脚本，它会强制传统�
 
 - ONNX 转 K230 KModel：见 [K230/README.md](K230/README.md)。
 - ONNX 转 Hailo-8L HEF：见 [Hailo/README.md](Hailo/README.md)。
+- YOLO26 实例分割 TensorRT 优化部署：见 [TensorRT/YOLO26/README.md](TensorRT/YOLO26/README.md)。
 
 ### YOLOv8n 转 Hailo-8L 快速流程
 

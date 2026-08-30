@@ -1,0 +1,36 @@
+{
+  "engine": "E:\\YOLO\\Model_Traning\\weights\\yolo26\\segment\\engine\\fp16\\yolo26s-seg-fp16-b1-640.engine",
+  "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "results": [
+    {
+      "concurrency": 1,
+      "native_effective_ms_per_image": 4.263366088867188,
+      "native_total_fps": 234.55644651564708,
+      "cuda_graph_effective_ms_per_image": 2.1305662536621095,
+      "cuda_graph_total_fps": 469.3587905474222,
+      "free_vram_before_bytes": 7311720448,
+      "free_vram_after_bytes": 7257194496,
+      "context_vram_delta_bytes": 54525952
+    },
+    {
+      "concurrency": 4,
+      "native_effective_ms_per_image": 4.178905334472656,
+      "native_total_fps": 239.2971172978705,
+      "cuda_graph_effective_ms_per_image": 1.8441357421875,
+      "cuda_graph_total_fps": 542.259431951472,
+      "free_vram_before_bytes": 7280263168,
+      "free_vram_after_bytes": 7150239744,
+      "context_vram_delta_bytes": 130023424
+    },
+    {
+      "concurrency": 8,
+      "native_effective_ms_per_image": 3.823155517578125,
+      "native_total_fps": 261.5640392869698,
+      "cuda_graph_effective_ms_per_image": 1.9648582458496093,
+      "cuda_graph_total_fps": 508.94256728815446,
+      "free_vram_before_bytes": 7278166016,
+      "free_vram_after_bytes": 7041187840,
+      "context_vram_delta_bytes": 236978176
+    }
+  ]
+}

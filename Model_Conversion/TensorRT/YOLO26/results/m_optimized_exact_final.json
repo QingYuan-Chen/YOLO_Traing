@@ -1,0 +1,21 @@
+{
+  "engine": "E:\\YOLO\\Model_Traning\\weights\\yolo26\\segment\\engine\\fp16\\yolo26m-seg-fp16-b1-640.engine",
+  "image": "E:\\YOLO\\.conda_pkgs\\benchmark\\bus.jpg",
+  "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "preprocess": "exact-cpu",
+  "confidence": 0.25,
+  "max_masks": 20,
+  "detections": 5,
+  "cuda_graph_gpu_ms": 5.533282877604167,
+  "cuda_graph_gpu_fps": 180.72453950393114,
+  "host_frame_to_gpu_results_latency_ms": {
+    "median": 5.9351000090828165,
+    "p95": 6.655499979387969,
+    "mean": 6.020143667895657
+  },
+  "host_frame_to_cpu_fixed_boxes_and_masks_latency_ms": {
+    "median": 6.878950007376261,
+    "p95": 7.555299991508946,
+    "mean": 6.89124600001378
+  }
+}

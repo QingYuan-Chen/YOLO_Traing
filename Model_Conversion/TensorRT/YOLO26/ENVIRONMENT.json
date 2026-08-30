@@ -1,0 +1,31 @@
+{
+  "tested_at": "2026-08-30",
+  "os": "Windows",
+  "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "gpu_compute_capability": "12.0",
+  "gpu_memory_mib": 8151,
+  "driver": "610.88",
+  "python": "3.12.13",
+  "torch": "2.8.0+cu128",
+  "torch_cuda": "12.8",
+  "tensorrt": "10.13.3.9.post1",
+  "ultralytics": "8.4.135",
+  "opencv": "4.12.0",
+  "numpy": "2.2.6",
+  "batch": 1,
+  "engine_internal_precision": "FP16",
+  "engine_io_precision": "FP32",
+  "models": {
+    "yolo26s-seg": {
+      "input": [1, 3, 640, 640]
+    },
+    "yolo26m-seg": {
+      "input": [1, 3, 640, 640]
+    },
+    "yolo26s-depth": {
+      "input": [1, 3, 768, 768],
+      "output": [1, 1, 768, 768],
+      "output_unit": "meter"
+    }
+  }
+}
